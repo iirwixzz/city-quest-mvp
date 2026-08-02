@@ -3,379 +3,448 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Questality — B2B Маркетинг & City Quest</title>
-    <!-- Tailwind CSS -->
+    <title>Questality — B2B Маркетинг & City Quest Platform</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Leaflet (Карта) -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <style>
-        /* Увеличенный размер карты и фикс z-index для корректного отображения под шапкой */
-        #map { height: 500px; width: 100%; border-radius: 16px; z-index: 10; }
+        /* Адаптивная высота карты: 280px для телефонов, 480px для компьютеров */
+        #map { 
+            height: 280px; 
+            width: 100%; 
+            border-radius: 16px; 
+            z-index: 10; 
+        }
+        @media (min-width: 768px) {
+            #map { height: 480px; }
+        }
         .custom-popup .leaflet-popup-content-wrapper { background: #0f172a; color: #f1f5f9; border: 1px solid #1e293b; }
         .custom-popup .leaflet-popup-tip { background: #0f172a; border: 1px solid #1e293b; }
     </style>
 </head>
 <body class="bg-slate-950 text-slate-100 font-sans antialiased min-h-screen flex flex-col">
 
-    <!-- Навигация (скрыта до авторизации) -->
-    <header id="main-header" class="hidden border-b border-slate-800 bg-slate-900/80 backdrop-blur sticky top-0 z-50 p-4 transition-all">
-        <div class="max-w-6xl mx-auto flex justify-between items-center">
-            <div class="flex items-center gap-2 cursor-pointer" onclick="switchView('b2b')">
+    <!-- Навигация -->
+    <header id="main-header" class="hidden border-b border-slate-800 bg-slate-900/90 backdrop-blur sticky top-0 z-50 p-4">
+        <div class="max-w-7xl mx-auto flex justify-between items-center gap-2">
+            <div class="flex items-center gap-2 cursor-pointer" onclick="switchNav('b2b')">
                 <span class="text-2xl">🌍</span>
                 <span class="font-extrabold text-xl tracking-tight bg-gradient-to-r from-indigo-400 to-cyan-400 bg-clip-text text-transparent">Questality</span>
             </div>
-            <div class="flex items-center gap-4">
-                <div class="flex gap-2 bg-slate-900 p-1 rounded-xl border border-slate-800">
-                    <button id="btn-b2b" onclick="switchView('b2b')" class="px-4 py-1.5 text-xs font-bold rounded-lg transition bg-indigo-600 text-white">💼 B2B Кабинет</button>
-                    <button id="btn-b2c" onclick="switchView('b2c')" class="px-4 py-1.5 text-xs font-bold rounded-lg transition text-slate-400 hover:text-white hover:bg-slate-800">📱 Игра (B2C)</button>
+            
+            <div class="flex items-center gap-2 overflow-x-auto py-1">
+                <div class="flex gap-1 bg-slate-950 p-1 rounded-xl border border-slate-800 text-xs font-bold">
+                    <button id="btn-b2b" onclick="switchNav('b2b')" class="px-3 py-1.5 rounded-lg transition bg-indigo-600 text-white">💼 B2B Кабинет</button>
+                    <button id="btn-catalog" onclick="switchNav('catalog')" class="px-3 py-1.5 rounded-lg transition text-slate-400 hover:text-white">🧰 Каталог</button>
+                    <button id="btn-admin" onclick="switchNav('admin')" class="px-3 py-1.5 rounded-lg transition text-slate-400 hover:text-white">⚙️ Админка</button>
+                    <button id="btn-b2c" onclick="switchNav('b2c')" class="px-3 py-1.5 rounded-lg transition text-emerald-400 hover:bg-emerald-950/50">📱 Игра (B2C)</button>
                 </div>
-                <button onclick="logout()" class="text-xs text-slate-400 hover:text-rose-400 transition" title="Выйти">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
+                <button onclick="logout()" class="p-2 text-slate-400 hover:text-rose-400 transition" title="Выйти">
+                    🚪
                 </button>
             </div>
         </div>
     </header>
 
-    <main class="flex-1 flex flex-col w-full max-w-6xl mx-auto p-4 md:p-6">
+    <main class="flex-1 flex flex-col w-full max-w-7xl mx-auto p-4 md:p-6">
 
-        <!-- ================= ЭКРАН АВТОРИЗАЦИИ (ЛИЧНЫЙ КАБИНЕТ) ================= -->
-        <div id="auth-view" class="flex-1 flex items-center justify-center">
+        <!-- ================= 1. ЛИЧНЫЙ КАБИНЕТ / ВХОД И РЕГИСТРАЦИЯ ================= -->
+        <div id="auth-view" class="flex-1 flex items-center justify-center py-6">
             <div class="max-w-md w-full bg-slate-900 p-8 rounded-3xl border border-slate-800 shadow-2xl space-y-6">
                 <div class="text-center space-y-2">
-                    <div class="text-4xl mb-4">🌍</div>
-                    <h1 class="text-2xl font-black bg-gradient-to-r from-indigo-400 to-cyan-400 bg-clip-text text-transparent">Вход в Questality</h1>
-                    <p class="text-slate-400 text-sm">Управляйте своим бизнесом или начните квест</p>
+                    <div class="text-4xl mb-2">🌍</div>
+                    <h1 class="text-2xl font-black bg-gradient-to-r from-indigo-400 to-cyan-400 bg-clip-text text-transparent">Questality B2B</h1>
+                    <p class="text-slate-400 text-xs">Платформа цифровизации оффлайн-бизнеса через геймификацию</p>
                 </div>
                 
-                <form id="login-form" onsubmit="handleLogin(event)" class="space-y-4">
+                <form onsubmit="handleLogin(event)" class="space-y-4">
                     <div>
-                        <label class="block text-xs font-semibold text-slate-400 mb-1">Email</label>
-                        <input type="email" value="admin@almaty.kz" required class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition">
+                        <label class="block text-xs font-semibold text-slate-400 mb-1">Email / Логин</label>
+                        <input type="text" id="user-email" value="owner@zebra-coffee.kz" required class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs text-slate-200 focus:border-indigo-500 outline-none">
                     </div>
-                    <div>
-                        <label class="block text-xs font-semibold text-slate-400 mb-1">Пароль</label>
-                        <input type="password" value="password123" required class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition">
+                    
+                    <div class="border-t border-slate-800 pt-3">
+                        <span class="text-[10px] font-bold text-indigo-400 uppercase tracking-wider block mb-2">🎯 Профиль бизнеса (Система рекомендаций)</span>
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <label class="block text-[10px] text-slate-400">Тип бизнеса</label>
+                                <select id="reg-biz-type" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-slate-200">
+                                    <option value="coffee">☕ Кофейня</option>
+                                    <option value="barber">✂️ Салон / Барбер</option>
+                                    <option value="retail">🛍️ Ритейл</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-[10px] text-slate-400">Цель компании</label>
+                                <select id="reg-biz-goal" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-slate-200">
+                                    <option value="traffic">Рост трафика</option>
+                                    <option value="retention">Удержание клиентов</option>
+                                </select>
+                            </div>
+                        </div>
                     </div>
-                    <div class="flex justify-between items-center text-xs">
-                        <label class="flex items-center gap-2 text-slate-400 cursor-pointer">
-                            <input type="checkbox" checked class="rounded border-slate-800 bg-slate-950 text-indigo-600 focus:ring-indigo-500"> Запомнить меня
-                        </label>
-                        <a href="#" class="text-indigo-400 hover:text-indigo-300">Забыли пароль?</a>
-                    </div>
-                    <button type="submit" id="login-btn" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-3 rounded-xl transition flex justify-center items-center gap-2">
-                        <span>Войти в систему</span>
+
+                    <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-3 rounded-xl transition text-xs shadow-lg shadow-indigo-500/20">
+                        Войти в Кабинет
                     </button>
                 </form>
             </div>
         </div>
 
-        <!-- ================= B2B ИНТЕРФЕЙС ================= -->
-        <div id="b2b-view" class="hidden space-y-8 animate-[fadeIn_0.3s_ease-out]">
+        <!-- ================= 2. B2B КАБИНЕТ (ГЛАВНАЯ & АНАЛИТИКА) ================= -->
+        <div id="b2b-view" class="hidden space-y-6">
             
-            <section class="text-center py-6 border-b border-slate-800 flex flex-col md:flex-row justify-between items-center gap-4 text-left">
+            <!-- Hero баннер -->
+            <section class="bg-gradient-to-r from-indigo-950/80 via-slate-900 to-slate-900 p-6 rounded-3xl border border-indigo-900/40 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div>
-                    <span class="bg-indigo-950 text-indigo-400 text-xs font-bold px-3 py-1 rounded-full border border-indigo-800 mb-3 inline-block">Панель управления</span>
-                    <h1 class="text-3xl font-black">Добро пожаловать в <span class="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-cyan-400">Questality B2B</span></h1>
+                    <span class="bg-indigo-900/60 text-indigo-300 text-[10px] font-extrabold px-3 py-1 rounded-full border border-indigo-700/50 uppercase">Ценностное предложение</span>
+                    <h1 class="text-2xl md:text-3xl font-black mt-2">Превращайте оффлайн-покупки в <span class="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-cyan-400">городской квест</span></h1>
+                    <p class="text-slate-400 text-xs mt-1 max-w-xl">Автоматический рост продаж, привлечение соседей из ближайших ЖК и конкуренция с маркетплейсами.</p>
                 </div>
-                <button onclick="alert('Скачивание отчета PDF...')" class="bg-slate-900 hover:bg-slate-800 border border-slate-700 px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2">
-                    📥 Скачать отчет
+                <button onclick="switchNav('catalog')" class="bg-indigo-600 hover:bg-indigo-500 text-xs font-bold px-4 py-3 rounded-xl transition whitespace-nowrap shadow-lg">
+                    🚀 Выбрать инструмент
                 </button>
             </section>
 
-            <!-- Аналитика (Кликабельные карточки) -->
-            <section>
-                <h2 class="text-lg font-bold mb-3 flex items-center gap-2">📊 Аналитика вашей точки (Кликните для деталей)</h2>
-                <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-                    <div onclick="showStat('Revenue')" class="bg-slate-900 p-4 rounded-2xl border border-slate-800 hover:border-emerald-500/50 cursor-pointer transition hover:-translate-y-1 group">
-                        <div class="text-slate-400 text-xs group-hover:text-slate-300">Выручка от игры</div>
-                        <div class="text-xl font-black text-emerald-400 mt-1">450 000 ₸</div>
-                        <div class="text-[10px] text-emerald-500 mt-1">↑ +24% за неделю</div>
+            <!-- Аналитика бизнеса -->
+            <section class="space-y-3">
+                <h2 class="text-base font-bold flex items-center gap-2">📊 Статистика и показатели точки за неделю</h2>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    <div class="bg-slate-900 p-4 rounded-2xl border border-slate-800">
+                        <div class="text-slate-400 text-xs">Выручка от квестов</div>
+                        <div class="text-lg font-black text-emerald-400 mt-1">450 000 ₸</div>
+                        <div class="text-[10px] text-emerald-500">↑ +24% к прошлой неделе</div>
                     </div>
-                    <div onclick="showStat('Clients')" class="bg-slate-900 p-4 rounded-2xl border border-slate-800 hover:border-indigo-500/50 cursor-pointer transition hover:-translate-y-1 group">
-                        <div class="text-slate-400 text-xs group-hover:text-slate-300">Новые клиенты</div>
-                        <div class="text-xl font-black text-indigo-400 mt-1">+128 чел.</div>
-                        <div class="text-[10px] text-indigo-400 mt-1">Из соседних ЖК</div>
+                    <div class="bg-slate-900 p-4 rounded-2xl border border-slate-800">
+                        <div class="text-slate-400 text-xs">Новые клиенты</div>
+                        <div class="text-lg font-black text-indigo-400 mt-1">+128 чел.</div>
+                        <div class="text-[10px] text-indigo-400">Конверсия акций: 34%</div>
                     </div>
-                    <div onclick="showStat('Retention')" class="bg-slate-900 p-4 rounded-2xl border border-slate-800 hover:border-amber-500/50 cursor-pointer transition hover:-translate-y-1 group">
-                        <div class="text-slate-400 text-xs group-hover:text-slate-300">Повторные чеки</div>
-                        <div class="text-xl font-black text-amber-400 mt-1">68%</div>
-                        <div class="text-[10px] text-amber-500 mt-1">Удержание "Мэров"</div>
+                    <div class="bg-slate-900 p-4 rounded-2xl border border-slate-800">
+                        <div class="text-slate-400 text-xs">Повторные чеки</div>
+                        <div class="text-lg font-black text-amber-400 mt-1">68%</div>
+                        <div class="text-[10px] text-amber-500">Удержание "Мэров"</div>
                     </div>
-                    <div onclick="showStat('Faction')" class="bg-slate-900 p-4 rounded-2xl border border-slate-800 hover:border-cyan-500/50 cursor-pointer transition hover:-translate-y-1 group">
-                        <div class="text-slate-400 text-xs group-hover:text-slate-300">Лидирующая Фракция</div>
-                        <div class="text-xl font-black text-cyan-400 mt-1">Команда "Альфа"</div>
-                        <div class="text-[10px] text-slate-400 mt-1">52% чеков точки</div>
+                    <div class="bg-slate-900 p-4 rounded-2xl border border-slate-800">
+                        <div class="text-slate-400 text-xs">Эффективность акций</div>
+                        <div class="text-lg font-black text-cyan-400 mt-1">4.9 / 5.0</div>
+                        <div class="text-[10px] text-slate-400">ROI: +310%</div>
                     </div>
                 </div>
             </section>
 
-            <!-- AI Интерактивный генератор акций -->
-            <section class="bg-gradient-to-br from-indigo-950/60 to-slate-900 p-6 rounded-2xl border border-indigo-800/50 space-y-4">
-                <h2 class="text-lg font-bold flex items-center gap-2">🤖 AI-Конструктор маркетинговых акций</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Рекомендации AI -->
+                <section class="bg-slate-900 p-5 rounded-2xl border border-slate-800 space-y-3">
+                    <h3 class="text-sm font-bold text-indigo-400 flex items-center gap-2">💡 Рекомендации для вашего профиля</h3>
+                    <div id="ai-recommendations" class="space-y-2 text-xs">
+                        <!-- Динамически заполняется -->
+                    </div>
+                </section>
+
+                <!-- История действий -->
+                <section class="bg-slate-900 p-5 rounded-2xl border border-slate-800 space-y-3">
+                    <h3 class="text-sm font-bold text-slate-200">📜 История действий & Аудит</h3>
+                    <div id="action-history" class="space-y-2 text-xs max-h-48 overflow-y-auto pr-1">
+                        <div class="p-2 bg-slate-950 rounded-lg border border-slate-800 text-slate-400 flex justify-between">
+                            <span>Запущена акция "Счастливые часы"</span>
+                            <span class="text-[10px]">Сегодня, 12:40</span>
+                        </div>
+                        <div class="p-2 bg-slate-950 rounded-lg border border-slate-800 text-slate-400 flex justify-between">
+                            <span>Обновлены данные профиля компании</span>
+                            <span class="text-[10px]">Вчера, 18:20</span>
+                        </div>
+                    </div>
+                </section>
+            </div>
+
+            <!-- Конструктор создания акции -->
+            <section class="bg-slate-900 p-6 rounded-3xl border border-slate-800 space-y-4">
+                <h3 class="text-base font-bold flex items-center gap-2">🛠️ Симулятор & Конструктор Акций</h3>
                 
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
-                        <label class="block text-xs font-semibold text-slate-400 mb-1">Тип бизнеса</label>
-                        <select id="biz-type" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-xs text-slate-200">
-                            <option value="coffee">☕ Кофейня / Пекарня</option>
-                            <option value="barber">✂️ Барбершоп / Салон</option>
-                            <option value="retail">🛍️ Магазин одежды</option>
+                        <label class="block text-xs text-slate-400 mb-1">Название акции</label>
+                        <input type="text" id="sim-title" value="Захват ЖК 'Северный'" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-xs text-slate-200">
+                    </div>
+                    <div>
+                        <label class="block text-xs text-slate-400 mb-1">Тип механики</label>
+                        <select id="sim-type" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-xs text-slate-200">
+                            <option value="discount">Скидка (%)</option>
+                            <option value="bonus">Двойные очки / Бонусы</option>
+                            <option value="coupon">Подарочный купон</option>
                         </select>
                     </div>
                     <div>
-                        <label class="block text-xs font-semibold text-slate-400 mb-1">Главная цель</label>
-                        <select id="biz-goal" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-xs text-slate-200">
-                            <option value="retention">Вернуть отстающую фракцию</option>
-                            <option value="offpeak">Заполнить часы простоя</option>
-                            <option value="new">Привлечь новых соседей</option>
-                        </select>
-                    </div>
-                    <div class="flex items-end">
-                        <button onclick="generateAIAction()" class="w-full bg-indigo-600 hover:bg-indigo-500 font-bold p-2.5 rounded-xl text-xs transition shadow-lg shadow-indigo-500/20">Сгенерировать акцию</button>
+                        <label class="block text-xs text-slate-400 mb-1">Прогнозируемый бонус</label>
+                        <input type="number" id="sim-val" value="20" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-xs text-slate-200">
                     </div>
                 </div>
 
-                <div id="ai-result" class="hidden bg-slate-950 p-4 rounded-xl border border-indigo-700/50 space-y-3 mt-4 transition-all">
-                    <p id="ai-text" class="text-xs text-slate-200 font-medium"></p>
-                    <button onclick="activateBonus()" class="bg-emerald-600 hover:bg-emerald-500 text-xs font-bold px-4 py-2 rounded-lg transition w-full sm:w-auto">🚀 Активировать акцию на карте</button>
+                <div class="bg-slate-950 p-4 rounded-xl border border-indigo-900/40 flex flex-col sm:flex-row justify-between items-center gap-3">
+                    <div class="text-xs">
+                        <span class="text-slate-400">Прогноз результатов: </span>
+                        <span id="sim-result-text" class="text-emerald-400 font-bold">+45 новых чеков, ротация клиентов +18%</span>
+                    </div>
+                    <button onclick="createCustomAction()" class="bg-emerald-600 hover:bg-emerald-500 text-xs font-bold px-4 py-2.5 rounded-xl transition w-full sm:w-auto">
+                        🚀 Запустить акцию
+                    </button>
                 </div>
             </section>
         </div>
 
-        <!-- ================= B2C ЭКРАН ИГРОКА (Увеличенный макет) ================= -->
-        <div id="b2c-view" class="hidden animate-[fadeIn_0.3s_ease-out] w-full">
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                
-                <!-- Левая колонка: Профиль и Интерактивы -->
-                <div class="space-y-4">
-                    <!-- Профиль -->
-                    <div class="bg-slate-900 p-5 rounded-3xl border border-slate-800 shadow-xl space-y-4 relative overflow-hidden">
-                        <div class="absolute -right-4 -top-4 w-24 h-24 bg-cyan-500/10 rounded-full blur-2xl"></div>
-                        <div class="flex justify-between items-start">
-                            <div>
-                                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Игрок</span>
-                                <h3 class="text-xl font-extrabold text-white">Азамат K.</h3>
-                                <div class="text-cyan-400 text-sm font-bold mt-1 flex items-center gap-1">
-                                    <span class="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span> Команда "Альфа"
-                                </div>
-                            </div>
-                            <div class="text-right">
-                                <span class="text-[10px] text-slate-400 uppercase">Очки</span>
-                                <div class="text-2xl font-black text-amber-400">12,450</div>
-                            </div>
-                        </div>
-                        
-                        <!-- Активный бафф -->
-                        <div id="active-buff-banner" class="hidden bg-emerald-950/80 border border-emerald-500/40 p-3 rounded-xl text-xs text-emerald-300 font-medium animate-bounce">
-                            🔥 **Акция активна:** +15% очков за покупки в кофейне до 18:00!
-                        </div>
+        <!-- ================= 3. КАТАЛОГ ИНСТРУМЕНТОВ & ИЗБРАННОЕ ================= -->
+        <div id="catalog-view" class="hidden space-y-6">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-slate-800 pb-4">
+                <div>
+                    <h1 class="text-2xl font-black">Каталог бизнес-инструментов</h1>
+                    <p class="text-slate-400 text-xs">Выбирайте готовые маркетинговые шаблоны для роста точек</p>
+                </div>
+                <!-- Фильтры -->
+                <div class="flex flex-wrap gap-1.5 text-xs">
+                    <button onclick="filterTools('all')" class="bg-indigo-600 px-3 py-1.5 rounded-lg text-white font-medium">Все</button>
+                    <button onclick="filterTools('marketing')" class="bg-slate-900 border border-slate-800 px-3 py-1.5 rounded-lg text-slate-300 hover:bg-slate-800">Маркетинг</button>
+                    <button onclick="filterTools('retention')" class="bg-slate-900 border border-slate-800 px-3 py-1.5 rounded-lg text-slate-300 hover:bg-slate-800">Удержание</button>
+                    <button onclick="filterTools('fav')" class="bg-amber-950 border border-amber-800 text-amber-400 px-3 py-1.5 rounded-lg font-medium">❤️ Избранное</button>
+                </div>
+            </div>
 
-                        <!-- QR Кнопка -->
-                        <button onclick="showQR()" class="w-full bg-gradient-to-r from-cyan-500 to-indigo-500 hover:from-cyan-400 hover:to-indigo-400 text-white font-black py-3 rounded-xl transition text-sm shadow-lg shadow-cyan-500/20">
-                            🔍 Показать QR для Чека
+            <!-- Грид карточек -->
+            <div id="tools-grid" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <!-- Карточки рендерятся из JS -->
+            </div>
+        </div>
+
+        <!-- ================= 4. АДМИН-ПАНЕЛЬ (УПРАВЛЕНИЕ И АНАЛИТИКА) ================= -->
+        <div id="admin-view" class="hidden space-y-6">
+            <div class="border-b border-slate-800 pb-4 flex justify-between items-center">
+                <div>
+                    <h1 class="text-2xl font-black text-rose-400">Панель Администратора Платформы</h1>
+                    <p class="text-slate-400 text-xs">Управление инструментами, категориями и глобальной аналитикой</p>
+                </div>
+                <span class="bg-rose-950 text-rose-300 border border-rose-800 text-[10px] font-bold px-3 py-1 rounded-full">SuperAdmin Mode</span>
+            </div>
+
+            <!-- Глобальная аналитика платформы -->
+            <section class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="bg-slate-900 p-4 rounded-2xl border border-slate-800">
+                    <div class="text-slate-400 text-xs">Всего активных бизнесов</div>
+                    <div class="text-xl font-black text-white mt-1">1,240 компаний</div>
+                </div>
+                <div class="bg-slate-900 p-4 rounded-2xl border border-slate-800">
+                    <div class="text-slate-400 text-xs">Самый популярный инструмент</div>
+                    <div class="text-xl font-black text-cyan-400 mt-1">Квест "Мэр Квартала"</div>
+                </div>
+                <div class="bg-slate-900 p-4 rounded-2xl border border-slate-800">
+                    <div class="text-slate-400 text-xs">Общий объем чеков</div>
+                    <div class="text-xl font-black text-emerald-400 mt-1">18,400,000 ₸</div>
+                </div>
+            </section>
+
+            <!-- Добавление нового инструмента -->
+            <section class="bg-slate-900 p-6 rounded-3xl border border-slate-800 space-y-4">
+                <h3 class="text-sm font-bold text-slate-200">➕ Добавить новый маркетинговый шаблон / инструмент</h3>
+                <form onsubmit="adminAddTool(event)" class="grid grid-cols-1 md:grid-cols-4 gap-3 text-xs">
+                    <input type="text" id="admin-tool-name" placeholder="Название инструмента" required class="bg-slate-950 border border-slate-800 p-2.5 rounded-xl text-slate-200">
+                    <input type="text" id="admin-tool-desc" placeholder="Краткое описание" required class="bg-slate-950 border border-slate-800 p-2.5 rounded-xl text-slate-200">
+                    <select id="admin-tool-cat" class="bg-slate-950 border border-slate-800 p-2.5 rounded-xl text-slate-200">
+                        <option value="marketing">Маркетинг</option>
+                        <option value="retention">Удержание</option>
+                        <option value="analytics">Аналитика</option>
+                    </select>
+                    <button type="submit" class="bg-rose-600 hover:bg-rose-500 font-bold p-2.5 rounded-xl text-white transition">Добавить шаблон</button>
+                </form>
+            </section>
+
+            <!-- Список управляемых инструментов -->
+            <section class="bg-slate-900 p-6 rounded-3xl border border-slate-800 space-y-3">
+                <h3 class="text-sm font-bold text-slate-200">⚙️ Управление существующими инструментами</h3>
+                <div id="admin-tools-list" class="space-y-2 text-xs">
+                    <!-- Заполняется динамически -->
+                </div>
+            </section>
+        </div>
+
+        <!-- ================= 5. B2C ИГРОВОЙ ЭКРАН (КАРТА И КВЕСТЫ) ================= -->
+        <div id="b2c-view" class="hidden space-y-4">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div class="space-y-4">
+                    <div class="bg-slate-900 p-5 rounded-3xl border border-slate-800 space-y-3">
+                        <div class="flex justify-between items-center">
+                            <div>
+                                <span class="text-[10px] font-bold text-slate-400 uppercase">Фракция</span>
+                                <h3 class="text-base font-extrabold text-cyan-400">Команда "Альфа"</h3>
+                            </div>
+                            <span class="bg-amber-950 text-amber-400 border border-amber-800 text-[10px] font-bold px-2 py-0.5 rounded-full">👑 Мэр Заведения</span>
+                        </div>
+                        <button onclick="alert('Ваш QR-код: QUEST-USER-2026')" class="w-full bg-gradient-to-r from-amber-500 to-orange-500 font-black py-3 rounded-xl text-slate-950 text-xs shadow-lg">
+                            🔍 Чек-ин по QR-коду
                         </button>
                     </div>
 
-                    <!-- Таблица Лидеров (Интерактив) -->
-                    <div class="bg-slate-900 p-5 rounded-3xl border border-slate-800 shadow-xl space-y-3">
-                        <div class="flex justify-between items-center mb-2">
-                            <h4 class="font-bold text-sm">🏆 Битва за район</h4>
-                            <span class="text-[10px] bg-slate-800 px-2 py-1 rounded-lg">Live</span>
-                        </div>
-                        <div class="space-y-2 text-xs">
-                            <div class="flex justify-between items-center p-2 bg-slate-950 rounded-lg border border-cyan-900/50">
-                                <span class="font-bold text-cyan-400">1. Альфа</span>
-                                <span>45,200 pts</span>
-                            </div>
-                            <div class="flex justify-between items-center p-2 bg-slate-950 rounded-lg">
-                                <span class="font-bold text-rose-400">2. Омега</span>
-                                <span>41,100 pts</span>
-                            </div>
-                            <div class="flex justify-between items-center p-2 bg-slate-950 rounded-lg">
-                                <span class="font-bold text-amber-400">3. Бета</span>
-                                <span>38,900 pts</span>
-                            </div>
-                        </div>
+                    <div class="bg-slate-900 p-5 rounded-3xl border border-slate-800 space-y-2 text-xs">
+                        <h4 class="font-bold mb-2">🏆 Рейтинг района</h4>
+                        <div class="flex justify-between p-2 bg-slate-950 rounded"><span>1. Альфа</span><span class="font-bold text-cyan-400">4,200 pts</span></div>
+                        <div class="flex justify-between p-2 bg-slate-950 rounded"><span>2. Бета</span><span class="font-bold text-slate-400">3,100 pts</span></div>
                     </div>
                 </div>
 
-                <!-- Правая колонка: Большая Интерактивная карта -->
-                <div class="lg:col-span-2 bg-slate-900 p-2 rounded-3xl border border-slate-800 shadow-xl flex flex-col">
-                    <div class="flex justify-between items-center px-4 py-2 border-b border-slate-800/50 mb-2">
-                        <h4 class="font-bold text-sm text-slate-200 flex items-center gap-2">📍 Карта Заведений (Алматы)</h4>
-                        <div class="flex gap-2">
-                            <button onclick="map.setZoom(15)" class="p-1.5 bg-slate-800 rounded hover:bg-slate-700 text-xs transition">🔍+</button>
-                            <button onclick="map.setZoom(13)" class="p-1.5 bg-slate-800 rounded hover:bg-slate-700 text-xs transition">🔍-</button>
-                        </div>
-                    </div>
-                    <!-- САМА КАРТА (УВЕЛИЧЕННАЯ) -->
-                    <div id="map" class="flex-1 rounded-2xl relative z-10"></div>
+                <div class="lg:col-span-2 bg-slate-900 p-2 rounded-3xl border border-slate-800">
+                    <div id="map"></div>
                 </div>
-
             </div>
         </div>
 
     </main>
 
-    <!-- Модальное окно QR -->
-    <div id="qr-modal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
-        <div class="bg-slate-900 border border-slate-700 rounded-3xl max-w-sm w-full p-8 text-center space-y-4">
-            <h3 class="font-bold text-lg">Ваш QuestID</h3>
-            <div class="bg-white p-4 rounded-xl mx-auto w-48 h-48 flex items-center justify-center">
-                <!-- Заглушка под QR -->
-                <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=QUESTALITY-USER-2026" alt="QR Code" class="w-full h-full object-contain">
-            </div>
-            <p class="text-xs text-slate-400">Покажите этот код на кассе заведения партнеров, чтобы захватить точку.</p>
-            <button onclick="closeQR()" class="bg-slate-800 hover:bg-slate-700 w-full py-2 rounded-xl text-sm font-bold transition mt-2">Закрыть</button>
-        </div>
-    </div>
-
     <script>
-        // --- Логика Авторизации ---
+        // --- БАЗА ДАННЫХ (MOCK DATA) ---
+        let toolsData = [
+            { id: 1, name: "Квест 'Мэр Квартала'", category: "retention", desc: "Битва фракций за звание частые гости заведения.", fav: true },
+            { id: 2, name: "AI-Геотаргетинг", category: "marketing", desc: "Рассылка пушей жителям конкретных домов.", fav: false },
+            { id: 3, name: "Flash-Скидки в простой", category: "marketing", desc: "Генерация бонусов в часы минимальной посадки.", fav: false }
+        ];
+
+        let historyLog = [
+            { text: "Создана акция 'Счастливые часы'", date: "Сегодня, 12:40" },
+            { text: "Вход в панель управления", date: "Вчера, 10:15" }
+        ];
+
+        // --- НАВИГАЦИЯ ---
+        function switchNav(view) {
+            ['b2b', 'catalog', 'admin', 'b2c'].forEach(v => {
+                document.getElementById(`${v}-view`).classList.add('hidden');
+            });
+            document.getElementById(`${view}-view`).classList.remove('hidden');
+
+            if (view === 'b2c') {
+                setTimeout(initMap, 200);
+            }
+            if (view === 'catalog') renderCatalog('all');
+            if (view === 'admin') renderAdminTools();
+        }
+
         function handleLogin(e) {
             e.preventDefault();
-            const btn = document.getElementById('login-btn');
-            btn.innerHTML = '<svg class="animate-spin h-5 w-5 mr-3 text-white" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Вход...';
+            const bizType = document.getElementById('reg-biz-type').value;
+            document.getElementById('auth-view').classList.add('hidden');
+            document.getElementById('main-header').classList.remove('hidden');
             
-            // Имитация загрузки
-            setTimeout(() => {
-                document.getElementById('auth-view').classList.add('hidden');
-                document.getElementById('main-header').classList.remove('hidden');
-                btn.innerHTML = 'Войти в систему'; // Сброс состояния
-                switchView('b2b'); // После входа кидаем в B2B
-            }, 800);
+            updateRecommendations(bizType);
+            switchNav('b2b');
         }
 
         function logout() {
-            document.getElementById('b2b-view').classList.add('hidden');
-            document.getElementById('b2c-view').classList.add('hidden');
             document.getElementById('main-header').classList.add('hidden');
+            ['b2b', 'catalog', 'admin', 'b2c'].forEach(v => document.getElementById(`${v}-view`).classList.add('hidden'));
             document.getElementById('auth-view').classList.remove('hidden');
-            document.getElementById('auth-view').classList.add('flex'); // Вернуть flex
         }
 
-        // --- Логика переключения экранов ---
-        function switchView(view) {
-            const b2bView = document.getElementById('b2b-view');
-            const b2cView = document.getElementById('b2c-view');
-            const btnB2b = document.getElementById('btn-b2b');
-            const btnB2c = document.getElementById('btn-b2c');
-
-            if (view === 'b2b') {
-                b2bView.classList.remove('hidden');
-                b2cView.classList.add('hidden');
-                
-                btnB2b.className = "px-4 py-1.5 text-xs font-bold rounded-lg transition bg-indigo-600 text-white shadow-lg shadow-indigo-500/20";
-                btnB2c.className = "px-4 py-1.5 text-xs font-bold rounded-lg transition text-slate-400 hover:text-white hover:bg-slate-800";
+        // --- ДИНАМИЧЕСКИЕ РЕКОМЕНДАЦИИ ---
+        function updateRecommendations(type) {
+            const container = document.getElementById('ai-recommendations');
+            if (type === 'coffee') {
+                container.innerHTML = `
+                    <div class="p-2.5 bg-slate-950 rounded-xl border border-indigo-900/40">☕ <b>Для кофеен:</b> Запустите "Утренний X2 Бонус", чтобы увеличить средний чек на 22%.</div>
+                    <div class="p-2.5 bg-slate-950 rounded-xl border border-indigo-900/40">🏆 Добавьте механику "Каждая 6-я чашка за 1 ₸" для фракции-лидера.</div>
+                `;
             } else {
-                b2bView.classList.add('hidden');
-                b2cView.classList.remove('hidden');
-                
-                btnB2c.className = "px-4 py-1.5 text-xs font-bold rounded-lg transition bg-cyan-600 text-white shadow-lg shadow-cyan-500/20";
-                btnB2b.className = "px-4 py-1.5 text-xs font-bold rounded-lg transition text-slate-400 hover:text-white hover:bg-slate-800";
-                
-                // Инициализация карты при первом открытии экрана B2C
-                setTimeout(() => {
-                    initMap();
-                    if(map) map.invalidateSize(); // Важно для leaflet при смене display:none
-                }, 100);
+                container.innerHTML = `
+                    <div class="p-2.5 bg-slate-950 rounded-xl border border-indigo-900/40">🛍️ <b>Для ритейла:</b> Настройте гео-скидку 15% для жителей ЖК в радиусе 500м.</div>
+                `;
             }
         }
 
-        // --- Интерактивы B2B ---
-        function showStat(type) {
-            const stats = {
-                'Revenue': 'Выручка за последние 7 дней выросла благодаря акции на выходных.',
-                'Clients': 'Из 128 новых клиентов 80% пришли из ЖК "Манхэттен".',
-                'Retention': 'Мэры заведения (частые гости) генерируют 40% всей выручки.',
-                'Faction': 'Команда "Альфа" удерживает вашу точку уже 3 дня подряд.'
-            };
-            alert("Детали аналитики:\n\n" + stats[type]);
+        // --- СИМУЛЯТОР И СОЗДАНИЕ АКЦИЙ ---
+        function createCustomAction() {
+            const title = document.getElementById('sim-title').value;
+            historyLog.unshift({ text: `Запущена акция: "${title}"`, date: "Только что" });
+            
+            const histDiv = document.getElementById('action-history');
+            histDiv.innerHTML = historyLog.map(h => `
+                <div class="p-2 bg-slate-950 rounded-lg border border-slate-800 text-slate-400 flex justify-between">
+                    <span>${h.text}</span>
+                    <span class="text-[10px]">${h.date}</span>
+                </div>
+            `).join('');
+
+            alert(`✅ Акция "${title}" успешно сформирована и отправлена в игру!`);
         }
 
-        function generateAIAction() {
-            const type = document.getElementById('biz-type').value;
-            const goal = document.getElementById('biz-goal').value;
-            const resDiv = document.getElementById('ai-result');
-            const textDiv = document.getElementById('ai-text');
+        // --- КАТАЛОГ И ИЗБРАННОЕ ---
+        function renderCatalog(filter) {
+            const grid = document.getElementById('tools-grid');
+            let items = toolsData;
 
-            resDiv.classList.remove('hidden');
-            textDiv.innerHTML = '<span class="animate-pulse">ИИ анализирует район...</span>';
+            if (filter === 'fav') items = toolsData.filter(t => t.fav);
+            else if (filter !== 'all') items = toolsData.filter(t => t.category === filter);
 
-            setTimeout(() => {
-                if (type === 'coffee' && goal === 'retention') {
-                    textDiv.innerHTML = '⚡ <b>AI Сценарий:</b> "Кофейный Реванш". Дать скидку 15% и X2 очков захвата для фракции "Бета" до конца дня, чтобы вернуть лидерство.';
-                } else if (type === 'barber' && goal === 'offpeak') {
-                    textDiv.innerHTML = '✂️ <b>AI Сценарий:</b> "Счастливые часы". Начислить +500 очков фракции за стрижку с 12:00 до 15:00.';
-                } else {
-                    textDiv.innerHTML = '🎁 <b>AI Сценарий:</b> "Захват Квартала". Начислить +300 очков и выдать бонусный купон жителям соседнего ЖК при покупке от 5000 ₸.';
-                }
-            }, 600);
+            grid.innerHTML = items.map(t => `
+                <div class="bg-slate-900 p-5 rounded-2xl border border-slate-800 space-y-3 flex flex-col justify-between">
+                    <div>
+                        <div class="flex justify-between items-start">
+                            <span class="text-[10px] font-bold text-indigo-400 uppercase bg-indigo-950/60 px-2 py-0.5 rounded border border-indigo-800/40">${t.category}</span>
+                            <button onclick="toggleFav(${t.id})" class="text-sm">${t.fav ? '❤️' : '🤍'}</button>
+                        </div>
+                        <h4 class="font-bold text-sm text-white mt-2">${t.name}</h4>
+                        <p class="text-slate-400 text-xs mt-1">${t.desc}</p>
+                    </div>
+                    <button onclick="alert('Инструмент активирован!')" class="w-full bg-indigo-600 hover:bg-indigo-500 font-bold py-2 rounded-xl text-xs transition">Активировать</button>
+                </div>
+            `).join('');
         }
 
-        function activateBonus() {
-            alert('✅ Акция мгновенно отправлена всем игрокам в радиусе 2 км!');
-            // Показываем бафф в B2C интерфейсе
-            document.getElementById('active-buff-banner').classList.remove('hidden');
+        function toggleFav(id) {
+            const item = toolsData.find(t => t.id === id);
+            if (item) item.fav = !item.fav;
+            renderCatalog('all');
         }
 
-        // --- Интерактивы B2C (Карта и модалки) ---
+        function filterTools(cat) { renderCatalog(cat); }
+
+        // --- АДМИН-ПАНЕЛЬ (CRUD) ---
+        function renderAdminTools() {
+            const list = document.getElementById('admin-tools-list');
+            list.innerHTML = toolsData.map(t => `
+                <div class="p-3 bg-slate-950 rounded-xl border border-slate-800 flex justify-between items-center">
+                    <div>
+                        <span class="font-bold text-slate-200">${t.name}</span>
+                        <span class="text-[10px] text-slate-500 ml-2">(${t.category})</span>
+                    </div>
+                    <button onclick="deleteTool(${t.id})" class="bg-rose-950 text-rose-400 border border-rose-800 hover:bg-rose-900 px-3 py-1 rounded-lg text-[10px] font-bold transition">Удалить</button>
+                </div>
+            `).join('');
+        }
+
+        function adminAddTool(e) {
+            e.preventDefault();
+            const name = document.getElementById('admin-tool-name').value;
+            const desc = document.getElementById('admin-tool-desc').value;
+            const category = document.getElementById('admin-tool-cat').value;
+
+            toolsData.push({ id: Date.now(), name, desc, category, fav: false });
+            renderAdminTools();
+            e.target.reset();
+            alert("Шаблон успешно добавлен в систему!");
+        }
+
+        function deleteTool(id) {
+            toolsData = toolsData.filter(t => t.id !== id);
+            renderAdminTools();
+        }
+
+        // --- ИНТЕРАКТИВНАЯ КАРТА (АДАПТИРОВАННАЯ ПОД МОБИЛЬНЫЕ) ---
         let map = null;
-        let mapInit = false;
-        
         function initMap() {
-            if (mapInit) return;
-            mapInit = true;
-            
-            // Центр Алматы
-            map = L.map('map', {zoomControl: false}).setView([43.2389, 76.8897], 14);
-            
-            // Тёмная тема карты
-            L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-                attribution: '&copy; OpenStreetMap, &copy; CARTO',
-                subdomains: 'abcd',
-                maxZoom: 19
-            }).addTo(map);
-
-            // Стилизация попапов (custom-popup определен в CSS)
-            const popupOptions = { className: 'custom-popup', closeButton: false };
-
-            // Маркеры с интерактивными кнопками внутри
-            L.marker([43.240, 76.890]).addTo(map).bindPopup(`
-                <div class="text-center p-1">
-                    <div class="text-xl mb-1">☕</div>
-                    <b class="text-cyan-400 block mb-1">Кофейня Zebra</b>
-                    <span class="text-[10px] text-slate-400 block mb-2">Контроль: Альфа (80%)</span>
-                    <button class="bg-cyan-600 text-white text-[10px] px-2 py-1 rounded w-full">Перехватить</button>
-                </div>
-            `, popupOptions);
-
-            L.marker([43.235, 76.882]).addTo(map).bindPopup(`
-                <div class="text-center p-1">
-                    <div class="text-xl mb-1">✂️</div>
-                    <b class="text-amber-400 block mb-1">Барбершоп Chill</b>
-                    <span class="text-[10px] text-slate-400 block mb-2">Контроль: Бета (55%)</span>
-                    <button class="bg-amber-600 text-white text-[10px] px-2 py-1 rounded w-full">Перехватить</button>
-                </div>
-            `, popupOptions);
-
-            L.marker([43.245, 76.895]).addTo(map).bindPopup(`
-                <div class="text-center p-1">
-                    <div class="text-xl mb-1">🛍️</div>
-                    <b class="text-rose-400 block mb-1">Бутик Style</b>
-                    <span class="text-[10px] text-slate-400 block mb-2">Контроль: Омега (90%)</span>
-                    <button class="bg-rose-600 text-white text-[10px] px-2 py-1 rounded w-full">Перехватить</button>
-                </div>
-            `, popupOptions);
-        }
-
-        function showQR() {
-            document.getElementById('qr-modal').classList.remove('hidden');
-        }
-
-        function closeQR() {
-            document.getElementById('qr-modal').classList.add('hidden');
+            if (!map) {
+                map = L.map('map').setView([43.2389, 76.8897], 14);
+                L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(map);
+                L.marker([43.240, 76.890]).addTo(map).bindPopup('☕ Zebra Coffee');
+            }
+            // Вызов принудительного перерасчета размера карты для корректной отрисовки тайлов на смартфонах
+            setTimeout(() => {
+                if (map) map.invalidateSize();
+            }, 300);
         }
     </script>
 </body>
